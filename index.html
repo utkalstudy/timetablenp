@@ -87,6 +87,16 @@
       text-align: center;
       margin-top: 40px;
     }
+    #printTime {
+      text-align: center;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    #copyright {
+      text-align: center;
+      font-size: 14px;
+      margin-top: 20px;
+    }
     @media print {
       form, .print-btn {
         display: none;
@@ -94,6 +104,9 @@
       th, td {
         padding: 2px;
         font-size: 12px;
+      }
+      #printTime, #copyright {
+        display: block;
       }
     }
   </style>
@@ -171,13 +184,15 @@
     <button type="submit">Add</button>
   </form>
 
-  <button class="print-btn" onclick="window.print()">🖨️ Print Routine</button>
+  <button class="print-btn" onclick="printRoutine()">🖨️ Print Routine</button>
   <button class="print-btn" onclick="exportToExcel()">📥 Export to Excel</button>
   <button class="print-btn" onclick="exportToWord()">📄 Export to Word</button>
 
   <div id="routinesContainer"></div>
   <div class="faculty-summary" id="facultySummary"></div>
   <div class="faculty-routine-container" id="facultyRoutineContainer"></div>
+  <div id="printTime"></div>
+  <div id="copyright"></div>
 
   <script>
     const classes = ["2nd CSE A", "2nd CSE B", "3rd CSE A", "3rd CSE B"];
@@ -357,6 +372,14 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    }
+
+    function printRoutine() {
+      const now = new Date();
+      const timeString = now.toLocaleString();
+      document.getElementById("printTime").innerText = `Printed on: ${timeString}`;
+      document.getElementById("copyright").innerHTML = `&copy; Bibhash`;
+      window.print();
     }
 
     renderTables();
