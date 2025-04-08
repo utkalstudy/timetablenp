@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Routine Generator - Nilachal Polytechnic</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: linear-gradient(to right, #e3f2fd, #f9fbe7);
+    }
+
+    .print-header {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .print-header h1 {
+      font-size: 24px;
+      margin: 4px;
+    }
+
+    .print-header h2 {
+      font-size: 18px;
+      margin: 4px;
+      font-weight: normal;
+    }
+
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    input, select, button {
+      padding: 6px;
+      font-size: 14px;
+    }
+
+    button {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      margin: 10px 0;
+      border-collapse: collapse;
+      background-color: white;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 4px;
+      text-align: center;
+      border: 1px solid #333;
+      cursor: pointer;
+    }
+
+    th {
+      background-color: #dcedc8;
+    }
+
+    .faculty-summary {
+      margin-top: 20px;
+      font-size: 14px;
+    }
+
+    .faculty-summary table {
+      width: 300px;
+      margin: auto;
+      border-collapse: collapse;
+    }
+
+    .faculty-summary th, .faculty-summary td {
+      border: 1px solid #333;
+      padding: 4px;
+      text-align: left;
+    }
+
+    .faculty-color {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    .print-btn {
+      margin: 10px;
+    }
+
+    @media print {
+      form, .print-btn {
+        display: none;
+      }
+      th, td {
+        padding: 2px;
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="print-header">
+    <h1>Nilachal Polytechnic</h1>
+    <h2>Department of Computer Science and Engineering</h2>
+    <h2>Class Routine</h2>
+    <h3>Effectively from ___/____/_________</h3>
+  </div>
+
+  <form id="routineForm">
+    <select id="className" required>
+      <option value="">Select Class</option>
+      <option>2nd CSE A</option>
+      <option>2nd CSE B</option>
+      <option>3rd CSE A</option>
+      <option>3rd CSE B</option>
+    </select>
+
+    <select id="day" required>
+      <option value="">Select Day</option>
+      <option>Monday</option>
+      <option>Tuesday</option>
+      <option>Wednesday</option>
+      <option>Thursday</option>
+      <option>Friday</option>
+      <option>Saturday</option>
+    </select>
+
+    <select id="period" required>
+      <option value="">Select Period</option>
+      <option value="1">Period 1</option>
+      <option value="2">Period 2</option>
+      <option value="3">Period 3</option>
+      <option value="4">Period 4</option>
+      <option value="5">Period 5</option>
+    </select>
+
+    <select id="faculty" required>
+      <option value="">Faculty</option>
+      <option>B R Pattnaik</option>
+      <option>M Batu</option>
+      <option>S Panda</option>
+      <option>S Tripathy</option>
+      <option>B R Parida</option>
+      <option>S Das</option>
+      <option>A Mohanty</option>
+      <option>N Jena</option>
+      <option>So Priyadarshini</option>
+      <option>J Mallick</option>
+      <option>D Pohi</option>
+    </select>
+
+    <select id="subject" required>
+      <option value="">Subject</option>
+      <option>CNS</option>
+      <option>IOT</option>
+      <option>CC</option>
+      <option>EC</option>
+      <option>NS LAB</option>
+      <option>IOT LAB</option>
+      <option>OS</option>
+      <option>DCCN</option>
+      <option>MPMC</option>
+      <option>DBMS</option>
+      <option>OS LAB</option>
+      <option>N LAB</option>
+      <option>MPMC LAB</option>
+      <option>DBMS LAB</option>
+    </select>
+
+    <button type="submit">Add</button>
+  </form>
+
+  <button class="print-btn" onclick="window.print()">🖨️ Print Routine</button>
+  <button class="print-btn" onclick="exportToExcel()">📥 Export to Excel</button>
+  <button class="print-btn" onclick="exportToWord()">📄 Export to Word</button>
+
+  <div id="routinesContainer"></div>
+  <div class="faculty-summary" id="facultySummary"></div>
+
+  <script>
+    const classes = ["2nd CSE A", "2nd CSE B", "3rd CSE A", "3rd CSE B"];
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const routineData = {};
+    const facultyColors = {};
+
+    const periodTimes = {
+      "2nd CSE A": ["10:20–11:20", "11:20–12:20", "12:50–01:50", "01:50–02:50", "02:50–03:50"],
+      "2nd CSE B": ["10:20–11:20", "11:20–12:20", "12:50–01:50", "01:50–02:50", "02:50–03:50"],
+      "3rd CSE A": ["10:20–11:20", "11:20–12:20", "12:20–01:20", "01:50–02:50", "02:50–03:50"],
+      "3rd CSE B": ["10:20–11:20", "11:20–12:20", "12:20–01:20", "01:50–02:50", "02:50–03:50"]
+    };
+
+    classes.forEach(cls => routineData[cls] = {});
+
+    function generatePastelColor() {
+      const hue = Math.floor(Math.random() * 360);
+      return `hsl(${hue}, 70%, 85%)`;
+    }
+
+    document.getElementById("routineForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const cls = document.getElementById("className").value;
+      const day = document.getElementById("day").value;
+      const period = parseInt(document.getElementById("period").value) - 1;
+      const faculty = document.getElementById("faculty").value.trim();
+      const subject = document.getElementById("subject").value.trim();
+
+      for (let otherClass of classes) {
+        if (routineData[otherClass][day] && routineData[otherClass][day][period]) {
+          if (routineData[otherClass][day][period].some(entry => entry.includes(`(${faculty})`))) {
+            alert(`❌ Faculty ${faculty} already scheduled for ${otherClass} on ${day}, Period ${period + 1}`);
+            return;
+          }
+        }
+      }
+
+      if (!routineData[cls][day]) routineData[cls][day] = {};
+      if (!routineData[cls][day][period]) routineData[cls][day][period] = [];
+
+      routineData[cls][day][period].push(`${subject} (${faculty})`);
+      if (!facultyColors[faculty]) {
+        facultyColors[faculty] = generatePastelColor();
+      }
+
+      this.reset();
+      renderTables();
+    });
+
+    function renderTables() {
+      const container = document.getElementById("routinesContainer");
+      container.innerHTML = "";
+
+      classes.forEach(cls => {
+        const title = document.createElement("h3");
+        title.textContent = `Routine for ${cls}`;
+        container.appendChild(title);
+
+        const table = document.createElement("table");
+        let thead = "<thead><tr><th>Day \\ Period</th>";
+        periodTimes[cls].forEach((time, i) => {
+          thead += `<th>P${i + 1}<br>${time}</th>`;
+        });
+        thead += "</tr></thead><tbody>";
+
+        days.forEach(day => {
+          thead += `<tr><td>${day}</td>`;
+          for (let i = 0; i < 5; i++) {
+            const entries = routineData[cls][day]?.[i] || [];
+            const cellContent = entries.map((val, idx) => {
+              const fac = val.match(/\(([^)]+)\)/)?.[1];
+              const color = facultyColors[fac] || "#eee";
+              return `<div onclick="deleteEntry('${cls}','${day}',${i},${idx})" style="background:${color};margin:2px;padding:2px;border-radius:4px">${val}</div>`;
+            }).join("");
+            thead += `<td>${cellContent}</td>`;
+          }
+          thead += "</tr>";
+        });
+
+        table.innerHTML = thead + "</tbody>";
+        container.appendChild(table);
+      });
+
+      renderFacultySummary();
+    }
+
+    function deleteEntry(cls, day, period, index) {
+      routineData[cls][day][period].splice(index, 1);
+      if (routineData[cls][day][period].length === 0) {
+        delete routineData[cls][day][period];
+      }
+      renderTables();
+    }
+
+    function renderFacultySummary() {
+      const summary = {};
+      for (let cls of classes) {
+        for (let day in routineData[cls]) {
+          for (let p in routineData[cls][day]) {
+            routineData[cls][day][p].forEach(entry => {
+              const fac = entry.match(/\(([^)]+)\)/)?.[1];
+              summary[fac] = (summary[fac] || 0) + 1;
+            });
+          }
+        }
+      }
+
+      let html = "<h3 style='text-align:center'>Faculty-wise Class Hours</h3><table><tr><th>Faculty</th><th>Hours</th></tr>";
+      for (let fac in summary) {
+        html += `<tr><td><span class="faculty-color" style="background:${facultyColors[fac]}"></span>${fac}</td><td>${summary[fac]}</td></tr>`;
+      }
+      html += "</table>";
+      document.getElementById("facultySummary").innerHTML = html;
+    }
+
+    function exportToExcel() {
+      const wb = XLSX.utils.book_new();
+      for (let cls of classes) {
+        let ws_data = [["Day/Period", "P1", "P2", "P3", "P4", "P5"]];
+        for (let day of days) {
+          const row = [day];
+          for (let i = 0; i < 5; i++) {
+            row.push((routineData[cls][day]?.[i] || []).join(", "));
+          }
+          ws_data.push(row);
+        }
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+        XLSX.utils.book_append_sheet(wb, ws, cls);
+      }
+      XLSX.writeFile(wb, "Routine.xlsx");
+    }
+
+    function exportToWord() {
+      const header = "<html><head><meta charset='utf-8'></head><body>";
+      const footer = "</body></html>";
+      const content = document.getElementById("routinesContainer").innerHTML + document.getElementById("facultySummary").innerHTML;
+      const blob = new Blob([header + content + footer], {
+        type: "application/msword"
+      });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "Routine.doc";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    renderTables();
+  </script>
+
+</body>
+</html>
