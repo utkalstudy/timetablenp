@@ -10,23 +10,19 @@
       padding: 20px;
       background: linear-gradient(to right, #e3f2fd, #f9fbe7);
     }
-
     .print-header {
       text-align: center;
       margin-bottom: 10px;
     }
-
     .print-header h1 {
       font-size: 24px;
       margin: 4px;
     }
-
     .print-header h2 {
       font-size: 18px;
       margin: 4px;
       font-weight: normal;
     }
-
     form {
       display: flex;
       flex-wrap: wrap;
@@ -34,19 +30,16 @@
       justify-content: center;
       margin-bottom: 20px;
     }
-
     input, select, button {
       padding: 6px;
       font-size: 14px;
     }
-
     button {
       background-color: #007BFF;
       color: white;
       border: none;
       cursor: pointer;
     }
-
     table {
       width: 100%;
       margin: 10px 0;
@@ -54,35 +47,29 @@
       background-color: white;
       font-size: 13px;
     }
-
     th, td {
       padding: 4px;
       text-align: center;
       border: 1px solid #333;
       cursor: pointer;
     }
-
     th {
       background-color: #dcedc8;
     }
-
     .faculty-summary {
       margin-top: 20px;
       font-size: 14px;
     }
-
     .faculty-summary table {
       width: 300px;
       margin: auto;
       border-collapse: collapse;
     }
-
     .faculty-summary th, .faculty-summary td {
       border: 1px solid #333;
       padding: 4px;
       text-align: left;
     }
-
     .faculty-color {
       display: inline-block;
       width: 12px;
@@ -90,11 +77,16 @@
       margin-right: 4px;
       vertical-align: middle;
     }
-
     .print-btn {
       margin: 10px;
     }
-
+    .faculty-routine-container {
+      margin-top: 40px;
+    }
+    .faculty-routine-container h3 {
+      text-align: center;
+      margin-top: 40px;
+    }
     @media print {
       form, .print-btn {
         display: none;
@@ -111,7 +103,7 @@
   <div class="print-header">
     <h1>Nilachal Polytechnic</h1>
     <h2>Department of Computer Science and Engineering</h2>
-    <h2>Class Routine</h2>
+    <h2>Time Table</h2>
     <h3>Effectively from ___/____/_________</h3>
   </div>
 
@@ -185,11 +177,13 @@
 
   <div id="routinesContainer"></div>
   <div class="faculty-summary" id="facultySummary"></div>
+  <div class="faculty-routine-container" id="facultyRoutineContainer"></div>
 
   <script>
     const classes = ["2nd CSE A", "2nd CSE B", "3rd CSE A", "3rd CSE B"];
     const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const routineData = {};
+    const facultyRoutines = {};
     const facultyColors = {};
 
     const periodTimes = {
@@ -225,8 +219,12 @@
 
       if (!routineData[cls][day]) routineData[cls][day] = {};
       if (!routineData[cls][day][period]) routineData[cls][day][period] = [];
-
       routineData[cls][day][period].push(`${subject} (${faculty})`);
+
+      if (!facultyRoutines[faculty]) facultyRoutines[faculty] = {};
+      if (!facultyRoutines[faculty][day]) facultyRoutines[faculty][day] = {};
+      facultyRoutines[faculty][day][period] = `${subject} (${cls})`;
+
       if (!facultyColors[faculty]) {
         facultyColors[faculty] = generatePastelColor();
       }
@@ -270,9 +268,13 @@
       });
 
       renderFacultySummary();
+      renderFacultyRoutines();
     }
 
     function deleteEntry(cls, day, period, index) {
+      const entry = routineData[cls][day][period][index];
+      const fac = entry.match(/\(([^)]+)\)/)?.[1];
+      delete facultyRoutines[fac]?.[day]?.[period];
       routineData[cls][day][period].splice(index, 1);
       if (routineData[cls][day][period].length === 0) {
         delete routineData[cls][day][period];
@@ -301,6 +303,32 @@
       document.getElementById("facultySummary").innerHTML = html;
     }
 
+    function renderFacultyRoutines() {
+      const container = document.getElementById("facultyRoutineContainer");
+      container.innerHTML = "<h3>Individual Time Table</h3>";
+      for (let faculty in facultyRoutines) {
+        const table = document.createElement("table");
+        let thead = `<thead><tr><th>Day \\ Period</th>`;
+        for (let i = 1; i <= 5; i++) {
+          thead += `<th>P${i}</th>`;
+        }
+        thead += "</tr></thead><tbody>";
+
+        days.forEach(day => {
+          thead += `<tr><td>${day}</td>`;
+          for (let i = 0; i < 5; i++) {
+            const data = facultyRoutines[faculty][day]?.[i] || "";
+            thead += `<td>${data}</td>`;
+          }
+          thead += "</tr>";
+        });
+
+        table.innerHTML = thead + "</tbody>";
+        container.innerHTML += `<h4>${faculty}</h4>`;
+        container.appendChild(table);
+      }
+    }
+
     function exportToExcel() {
       const wb = XLSX.utils.book_new();
       for (let cls of classes) {
@@ -321,10 +349,8 @@
     function exportToWord() {
       const header = "<html><head><meta charset='utf-8'></head><body>";
       const footer = "</body></html>";
-      const content = document.getElementById("routinesContainer").innerHTML + document.getElementById("facultySummary").innerHTML;
-      const blob = new Blob([header + content + footer], {
-        type: "application/msword"
-      });
+      const content = document.getElementById("routinesContainer").innerHTML + document.getElementById("facultySummary").innerHTML + document.getElementById("facultyRoutineContainer").innerHTML;
+      const blob = new Blob([header + content + footer], { type: "application/msword" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = "Routine.doc";
